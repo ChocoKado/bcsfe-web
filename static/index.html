@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCSFE 貓咪大戰爭網頁版修改器 | Battle Cats Save Editor</title>
+  <meta name="description" content="功能強大、介面美觀的貓咪大戰爭網頁版存檔修改器，支援存檔上傳下載、引繼碼傳輸、貓罐頭、XP、全貓咪解鎖、全金寶、加碼多多與時間修復。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="logo-group">
+        <div class="logo-badge">🐱</div>
+        <div>
+          <h1 class="logo-title">BCSFE Web Edition</h1>
+          <div class="logo-subtitle">貓咪大戰爭全功能網頁修改器</div>
+        </div>
+      </div>
+
+      <!-- Save File Status Bar -->
+      <div class="save-status-bar" id="saveStatusBar">
+        <div class="status-indicator">
+          <div class="status-dot" id="saveStatusDot"></div>
+          <span id="saveStatusText">未載入存檔</span>
+        </div>
+        <div class="status-pills" id="saveStatusPills" style="display: none;">
+          <span class="pill pill-gold" id="pillRegion">TW</span>
+          <span class="pill pill-cyan" id="pillVersion">v14.2.0</span>
+          <span class="pill" id="pillUR">UR: 0</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="nav-actions">
+        <button class="btn btn-secondary btn-sm" id="btnCreateTestSave">
+          <span>⚡</span> 建立測試存檔
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnExportSave">
+          <span>💾</span> 匯出存檔
+        </button>
+        <button class="btn btn-cyan btn-sm" id="btnGodMode">
+          <span>👑</span> 一鍵畢業
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Quick Info Strip -->
+  <div class="quick-action-strip">
+    <div class="strip-container">
+      <div class="quick-stats">
+        <div class="stat-item">
+          <span class="stat-icon">🥫</span>
+          <span class="stat-label">貓罐頭:</span>
+          <span class="stat-value gold" id="quickStatCatfood">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">✨</span>
+          <span class="stat-label">經驗值:</span>
+          <span class="stat-value cyan" id="quickStatXp">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🚩</span>
+          <span class="stat-label">統率力:</span>
+          <span class="stat-value" id="quickStatLeadership">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🎫</span>
+          <span class="stat-label">金券:</span>
+          <span class="stat-value" id="quickStatRareTickets">--</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🐾</span>
+          <span class="stat-label">解鎖貓咪:</span>
+          <span class="stat-value" id="quickStatCats">--</span>
+        </div>
+      </div>
+      <div class="strip-actions">
+        <button class="btn btn-secondary btn-sm" id="btnSafeMaxAll">
+          <span>🛡️</span> 一鍵安全全滿 (防封)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav" id="mainTabs">
+    <button class="tab-btn active" data-tab="tabSave">📁 存檔管理</button>
+    <button class="tab-btn" data-tab="tabCurrencies">💰 貨幣與道具</button>
+    <button class="tab-btn" data-tab="tabCatfruit">🍇 貓薄荷與貓目石</button>
+    <button class="tab-btn" data-tab="tabCats">🐱 貓咪角色與本能</button>
+    <button class="tab-btn" data-tab="tabStages">🗺️ 關卡與寶物進度</button>
+    <button class="tab-btn" data-tab="tabBase">🏯 加碼多多與基地</button>
+    <button class="tab-btn" data-tab="tabFixes">🛠️ 修復與特殊功能</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- 1. 存檔管理 Tab -->
+    <section class="tab-panel active" id="tabSave">
+      <div class="grid-container">
+        
+        <!-- 上傳存檔卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">📤</span> 上傳本機存檔</div>
+            <span class="pill pill-gold">SAVE_DATA</span>
+          </div>
+          <div class="card-body">
+            <div class="upload-dropzone" id="dropzone">
+              <div class="dropzone-icon">📥</div>
+              <div class="dropzone-title">拖曳存檔至此 或 點擊選取</div>
+              <div class="dropzone-sub">支援 SAVE_DATA、SAVE_DATA.bin 等二進位存檔</div>
+              <input type="file" id="fileInput" style="display: none;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">指定伺服器語系 (選填，自動偵測)</label>
+              <select class="form-input" id="uploadCcSelect">
+                <option value="">自動偵測 (推薦)</option>
+                <option value="tw">繁體中文版 (TW)</option>
+                <option value="jp">日版 (JP)</option>
+                <option value="en">英文版 (EN)</option>
+                <option value="kr">韓文版 (KR)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 伺服器引繼下載卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">☁️</span> 從官方伺服器下載 (引繼碼)</div>
+            <span class="pill pill-cyan">PONOS Server</span>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">引繼碼 (Transfer Code)</label>
+              <input type="text" class="form-input" id="inputTransferCode" placeholder="例如: 1a2b3c4d5">
+            </div>
+            <div class="form-group">
+              <label class="form-label">認證碼 (Confirmation Code / PIN)</label>
+              <input type="text" class="form-input" id="inputConfirmCode" placeholder="例如: 1234">
+            </div>
+            <div class="form-group">
+              <label class="form-label">遊戲版本與伺服器語系</label>
+              <div class="input-with-actions">
+                <select class="form-input" id="downloadCcSelect">
+                  <option value="tw" selected>繁體中文版 (TW)</option>
+                  <option value="jp">日版 (JP)</option>
+                  <option value="en">英文版 (EN)</option>
+                  <option value="kr">韓文版 (KR)</option>
+                </select>
+                <input type="text" class="form-input" id="downloadGvInput" value="14.2.0" style="max-width: 100px;">
+              </div>
+            </div>
+            <button class="btn btn-cyan" id="btnDownloadServer">
+              <span>🚀</span> 下載伺服器存檔
+            </button>
+          </div>
+        </div>
+
+        <!-- 上傳至伺服器產生引繼碼卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">📲</span> 上傳至伺服器 (獲取新引繼碼)</div>
+          </div>
+          <div class="card-body">
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+              修改完成後，可將存檔直接上傳至 PONOS 遊戲伺服器，並產生一組全新的引繼碼與認證碼，即可直接在手機遊戲內輸入恢復進度！
+            </p>
+            <button class="btn btn-primary" id="btnUploadServer">
+              <span>📤</span> 上傳並獲取引繼碼
+            </button>
+            <div id="uploadResultBox" style="display: none; background: rgba(10, 14, 23, 0.6); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-active);">
+              <div style="font-weight: 700; color: var(--accent-gold-light); margin-bottom: 8px;">引繼碼生成成功：</div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">引繼碼:</span>
+                <span style="font-weight: 700; color: #fff;" id="resTransferCode">--</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: var(--text-muted);">認證碼:</span>
+                <span style="font-weight: 700; color: #fff;" id="resConfirmCode">--</span>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btnCopyCodes" style="width: 100%;">
+                <span>📋</span> 一鍵複製代碼
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 存檔資訊卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">ℹ️</span> 當前存檔詳細資訊</div>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">遊戲伺服器:</span>
+                <span style="font-weight: 600;" id="infoCc">--</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">遊戲版本:</span>
+                <span style="font-weight: 600;" id="infoGv">--</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">帳號詢問碼:</span>
+                <span style="font-weight: 600; color: var(--accent-gold-light);" id="infoInquiry">--</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">使用者等級 (UR):</span>
+                <span style="font-weight: 600;" id="infoUR">--</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">已解鎖貓咪數:</span>
+                <span style="font-weight: 600;" id="infoCats">--</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">累積遊玩時數:</span>
+                <span style="font-weight: 600;" id="infoPlaytime">-- 小時</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. 貨幣與道具 Tab -->
+    <section class="tab-panel" id="tabCurrencies">
+      <div class="grid-container">
+
+        <!-- 基礎貨幣卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">💎</span> 主要貨幣</div>
+          </div>
+          <div class="card-body">
+            <!-- 貓罐頭 -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>貓罐頭 (Cat Food)</span>
+                <span style="color: var(--accent-gold-light); font-size: 0.75rem;">安全上限 19,999 / 最高 45,000</span>
+              </div>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputCatfood" value="0">
+              </div>
+              <div class="preset-chips">
+                <span class="chip" onclick="setVal('inputCatfood', 19999)">🛡️ 安全全滿 (19,999)</span>
+                <span class="chip" onclick="setVal('inputCatfood', 45000)">🔥 極限上限 (45,000)</span>
+                <span class="chip" onclick="addVal('inputCatfood', 5000)">+5,000</span>
+              </div>
+            </div>
+
+            <!-- XP -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>經驗值 (XP)</span>
+                <span style="color: var(--accent-cyan-light); font-size: 0.75rem;">上限 99,999,999</span>
+              </div>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputXp" value="0">
+              </div>
+              <div class="preset-chips">
+                <span class="chip" onclick="setVal('inputXp', 99999999)">MAX (99,999,999)</span>
+                <span class="chip" onclick="addVal('inputXp', 10000000)">+1,000萬</span>
+              </div>
+            </div>
+
+            <!-- 統率力 -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>統率力旗子 (Leadership)</span>
+                <span style="color: var(--text-muted); font-size: 0.75rem;">上限 9,999</span>
+              </div>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputLeadership" value="0">
+              </div>
+              <div class="preset-chips">
+                <span class="chip" onclick="setVal('inputLeadership', 9999)">MAX (9,999)</span>
+                <span class="chip" onclick="setVal('inputLeadership', 999)">安全 (999)</span>
+              </div>
+            </div>
+
+            <!-- NP -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>喵魔石 / 本能點數 (NP)</span>
+                <span style="color: var(--text-muted); font-size: 0.75rem;">上限 9,999</span>
+              </div>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputNp" value="0">
+              </div>
+              <div class="preset-chips">
+                <span class="chip" onclick="setVal('inputNp', 9999)">MAX (9,999)</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnSaveCurrencies">
+              <span>💾</span> 儲存貨幣設定
+            </button>
+          </div>
+        </div>
+
+        <!-- 轉蛋抽獎券卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🎫</span> 轉蛋抽獎券</div>
+          </div>
+          <div class="card-body">
+            <!-- 銀券 -->
+            <div class="form-group">
+              <label class="form-label">普通銀券 (Normal Tickets)</label>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputNormalTickets" value="0">
+              </div>
+              <div class="preset-chips">
+                <span class="chip" onclick="setVal('inputNormalTickets', 999)">999 張</span>
+                <span class="chip" onclick="addVal('inputNormalTickets', 100)">+100</span>
+              </div>
+            </div>
+
+            <!-- 金券 -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>稀有金券 (Rare Tickets)</span>
+                <span style="color: var(--accent-gold-light); font-size: 0.75rem;">安全上限 99 ~ 299</span>
+              </div>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputRareTickets" value="0">
+              </div>
+              <div class="preset-chips">
+                <span class="chip" onclick="setVal('inputRareTickets', 99)">🛡️ 安全 (99 張)</span>
+                <span class="chip" onclick="setVal('inputRareTickets', 299)">299 張</span>
+              </div>
+            </div>
+
+            <!-- 白金券 & 傳奇券 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">白金券 (Plat Tickets)</label>
+                <input type="number" class="form-input" id="inputPlatTickets" value="0">
+                <div class="preset-chips">
+                  <span class="chip" onclick="setVal('inputPlatTickets', 9)">安全 9 張</span>
+                  <span class="chip" onclick="setVal('inputPlatTickets', 19)">19 張</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">傳奇券 (Legend Tickets)</label>
+                <input type="number" class="form-input" id="inputLegendTickets" value="0">
+                <div class="preset-chips">
+                  <span class="chip" onclick="setVal('inputLegendTickets', 9)">安全 9 張</span>
+                  <span class="chip" onclick="setVal('inputLegendTickets', 19)">19 張</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 白金碎片 & 一億券 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">白金碎片 (Shards)</label>
+                <input type="number" class="form-input" id="inputPlatShards" value="0">
+                <div class="preset-chips">
+                  <span class="chip" onclick="setVal('inputPlatShards', 99)">99 片</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">一億次下載券</label>
+                <input type="number" class="form-input" id="input100mTicket" value="0">
+                <div class="preset-chips">
+                  <span class="chip" onclick="setVal('input100mTicket', 100)">100 張</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnSaveTickets">
+              <span>💾</span> 儲存抽獎券設定
+            </button>
+          </div>
+        </div>
+
+        <!-- 戰鬥道具卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">⚔️</span> 戰鬥道具</div>
+            <button class="btn btn-cyan btn-sm" id="btnQuickMaxBattleItems">
+              <span>⚡</span> 一鍵全滿 (999)
+            </button>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="battleItemsContainer">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label">黃金貓咪電腦 (Golden CPU)</label>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputGoldenCpu" value="0">
+                <button class="btn btn-secondary btn-sm" onclick="setVal('inputGoldenCpu', 99)">99 個</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btnSaveBattleItems">
+              <span>💾</span> 儲存戰鬥道具設定
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. 貓薄荷與貓目石 Tab -->
+    <section class="tab-panel" id="tabCatfruit">
+      <div class="grid-container">
+
+        <!-- 貓薄荷與獸石卡片 -->
+        <div class="card" style="grid-column: span 2;">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🍇</span> 貓薄荷與獸石 (進化材料)</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="setAllCatfruit(128)">
+                <span>🛡️</span> 安全全滿 (128 顆)
+              </button>
+              <button class="btn btn-cyan btn-sm" onclick="setAllCatfruit(999)">
+                <span>⚡</span> 極限全滿 (999 顆)
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;" id="catfruitContainer">
+              <!-- Rendered via JS -->
+            </div>
+            <button class="btn btn-primary" id="btnSaveCatfruit" style="margin-top: 12px;">
+              <span>💾</span> 儲存貓薄荷設定
+            </button>
+          </div>
+        </div>
+
+        <!-- 貓目石卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">👁️</span> 貓目石 (Catseyes)</div>
+            <button class="btn btn-cyan btn-sm" onclick="setAllCatseyes(99)">
+              <span>⚡</span> 一鍵全滿 (99 顆)
+            </button>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px;" id="catseyesContainer">
+              <!-- Rendered via JS -->
+            </div>
+            <button class="btn btn-primary" id="btnSaveCatseyes" style="margin-top: 12px;">
+              <span>💾</span> 儲存貓目石設定
+            </button>
+          </div>
+        </div>
+
+        <!-- 喵力達卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🧪</span> 喵力達 (Catamins)</div>
+            <button class="btn btn-cyan btn-sm" onclick="setAllCatamins(999)">
+              <span>⚡</span> 一鍵全滿 (999 個)
+            </button>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px;" id="cataminsContainer">
+              <!-- Rendered via JS -->
+            </div>
+            <button class="btn btn-primary" id="btnSaveCatamins" style="margin-top: 12px;">
+              <span>💾</span> 儲存喵力達設定
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. 貓咪角色與本能 Tab -->
+    <section class="tab-panel" id="tabCats">
+      <div class="grid-container">
+
+        <!-- 貓咪全解鎖卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🔓</span> 貓咪角色解鎖</div>
+          </div>
+          <div class="card-body">
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵解鎖全部可獲得貓咪</div>
+                <div class="switch-sub">包含全部轉蛋、降臨與活動貓咪</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockAllCats" checked>
+            </label>
+
+            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
+              或依稀有度挑選解鎖：
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <label class="switch-label">
+                <div class="switch-title" style="font-size: 0.85rem;">基本貓</div>
+                <input type="checkbox" class="checkbox-custom chk-rarity" value="0">
+              </label>
+              <label class="switch-label">
+                <div class="switch-title" style="font-size: 0.85rem;">EX 貓</div>
+                <input type="checkbox" class="checkbox-custom chk-rarity" value="1">
+              </label>
+              <label class="switch-label">
+                <div class="switch-title" style="font-size: 0.85rem;">稀有貓</div>
+                <input type="checkbox" class="checkbox-custom chk-rarity" value="2">
+              </label>
+              <label class="switch-label">
+                <div class="switch-title" style="font-size: 0.85rem;">激稀有貓</div>
+                <input type="checkbox" class="checkbox-custom chk-rarity" value="3">
+              </label>
+              <label class="switch-label">
+                <div class="switch-title" style="font-size: 0.85rem;">超激稀有貓</div>
+                <input type="checkbox" class="checkbox-custom chk-rarity" value="4">
+              </label>
+              <label class="switch-label">
+                <div class="switch-title" style="font-size: 0.85rem;">傳說稀有貓</div>
+                <input type="checkbox" class="checkbox-custom chk-rarity" value="5">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 貓咪等級與形態進化卡片 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">⭐</span> 貓咪等級與形態進化</div>
+          </div>
+          <div class="card-body">
+            <!-- 等級設定 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">基礎等級 (Base Level)</label>
+                <input type="number" class="form-input" id="inputCatBaseLevel" value="50">
+              </div>
+              <div class="form-group">
+                <label class="form-label">加成等級 (+ Plus Level)</label>
+                <input type="number" class="form-input" id="inputCatPlusLevel" value="90">
+              </div>
+            </div>
+
+            <!-- 進化形態 -->
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵開啟全部三階進化 (True Form)</div>
+                <div class="switch-sub">解鎖全部貓咪的第三形態</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockTrueForm" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵開啟全部四階超本能形態 (4th Form)</div>
+                <div class="switch-sub">包含最新超絕進化形態</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockFourthForm" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵全解鎖滿本能 (Max Talents)</div>
+                <div class="switch-sub">將所有貓咪的所有本能提升至最高等級</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxTalents" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">全解鎖貓咪圖鑑 (Cat Guide / Dex)</div>
+                <div class="switch-sub">開通所有圖鑑已獲得標記</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockCatGuide" checked>
+            </label>
+
+            <button class="btn btn-primary" id="btnApplyCatEdits" style="margin-top: 12px;">
+              <span>🚀</span> 執行貓咪全功能修改
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 5. 關卡與寶物進度 Tab -->
+    <section class="tab-panel" id="tabStages">
+      <div class="grid-container">
+
+        <!-- 世界篇 / 未來篇 / 宇宙篇 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🌍</span> 世界篇、未來篇與宇宙篇</div>
+          </div>
+          <div class="card-body">
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵通關全部主線章節</div>
+                <div class="switch-sub">世界篇 1~3、未來篇 1~3、宇宙篇 1~3</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearStory" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵獲得全章節 100% 最高級金寶</div>
+                <div class="switch-sub">世界、未來、宇宙篇所有關卡最高品質金寶全開</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkAllGoldTreasures" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">未來篇計時得分全滿 (9999)</div>
+                <div class="switch-sub">領取全部計時通關獎勵</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxTimedScores" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">全通關殭屍襲來 (Zombie Outbreaks)</div>
+                <div class="switch-sub">清除所有章節的殭屍侵略關卡</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearOutbreaks" checked>
+            </label>
+          </div>
+        </div>
+
+        <!-- 傳奇關卡與魔界篇 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">⚔️</span> 傳奇關卡、魔界篇與其他</div>
+          </div>
+          <div class="card-body">
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">解鎖並全通關魔界篇 (Aku Realm)</div>
+                <div class="switch-sub">解鎖惡魔之門並通關全部魔界關卡</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearAku" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">舊傳奇關卡 (Stories of Legend) 1~4★ 全通關</div>
+                <div class="switch-sub">通關大傳奇傳奇關卡</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearSol" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">真傳奇關卡 (Uncanny Legends) 1~4★ 全通關</div>
+                <div class="switch-sub">通關古代真傳奇關卡</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearUl" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">零傳奇關卡 (Zero Legends) 全通關</div>
+                <div class="switch-sub">通關零傳奇最新章節</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearZl" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">貓咪塔全通關 (風雲風神塔 / 異界塔)</div>
+                <div class="switch-sub">通關全部 50 層塔</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearTowers" checked>
+            </label>
+
+            <button class="btn btn-primary" id="btnApplyStages" style="margin-top: 12px;">
+              <span>🚀</span> 執行關卡與寶物修改
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 6. 加碼多多與基地 Tab -->
+    <section class="tab-panel" id="tabBase">
+      <div class="grid-container">
+
+        <!-- 加碼多多探險隊 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🧭</span> 加碼多多探險隊 (Gamatoto)</div>
+          </div>
+          <div class="card-body">
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">加碼多多滿級與滿經驗</div>
+                <div class="switch-sub">達到最高探險等級</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxGamatoto" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">滿編 10 隻傳奇隊員 (Gold Helpers)</div>
+                <div class="switch-sub">全部隊員更換為最高品質金色傳奇隊員</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkLegendaryHelpers" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">貓咪神社滿級 (Cat Shrine)</div>
+                <div class="switch-sub">神社升至 Lv 30 並注入滿額香油錢</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxShrine" checked>
+            </label>
+          </div>
+        </div>
+
+        <!-- 奧托托與城堡開發 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🏰</span> 奧托托與基地城堡開發 (Ototo)</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <div class="form-label">
+                <span>城堡開發材料數量 (8 種材料)</span>
+                <span style="color: var(--text-muted); font-size: 0.75rem;">紅磚、羽毛、煤炭、齒輪、黃金、隕石、獸骨、菊石</span>
+              </div>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputBaseMaterials" value="9999">
+                <button class="btn btn-secondary btn-sm" onclick="setVal('inputBaseMaterials', 9999)">9,999</button>
+              </div>
+            </div>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">滿編 5 位奧托托工程師</div>
+                <div class="switch-sub">最大化城堡開發效率</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxEngineers" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">全部城砲風格解鎖並全滿級</div>
+                <div class="switch-sub">慢速砲、鐵壁砲、水砲、聖光砲、斬擊砲、詛咒砲全部最高階 Lv30</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxCannons" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">特殊能力全滿 (Special Skills)</div>
+                <div class="switch-sub">主砲攻擊力、充電速度、射程、城堡耐久力全滿級</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkMaxSpecialSkills" checked>
+            </label>
+
+            <button class="btn btn-primary" id="btnApplyBase" style="margin-top: 12px;">
+              <span>💾</span> 儲存加碼多多與基地設定
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 7. 修復與特殊功能 Tab -->
+    <section class="tab-panel" id="tabFixes">
+      <div class="grid-container">
+
+        <!-- 時間與崩潰修復 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🔧</span> 異常錯誤修復</div>
+          </div>
+          <div class="card-body">
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">修正 HGT00 / 時間異常錯誤</div>
+                <div class="switch-sub">修復因為修改時間或時區造成的體力/轉蛋鎖死</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkFixTime" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">修正加碼多多崩潰 (Gamatoto Crash)</div>
+                <div class="switch-sub">修復因探險隊皮膚或數據導致的閃退問題</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkFixGamatoto" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">修正奧托托城砲崩潰 (Ototo Crash)</div>
+                <div class="switch-sub">修復城砲未初始化引起的遊戲崩潰</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkFixOtoto" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">修正會員證崩潰 (Officer Pass Crash)</div>
+                <div class="switch-sub">修復黃金會員資料格式問題</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkFixOfficerPass" checked>
+            </label>
+          </div>
+        </div>
+
+        <!-- 帳號特權與其他功能 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">🎁</span> 帳號特權與特殊功能</div>
+          </div>
+          <div class="card-body">
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">解鎖全部 10 個出陣隊伍欄位 (Lineups)</div>
+                <div class="switch-sub">無需花費罐頭購買隊伍頁面</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockLineups" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">解鎖全部使用者獎牌 (Medals)</div>
+                <div class="switch-sub">獲取所有遊戲內成就勳章</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockMedals" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵完成並領取全部任務 (Missions)</div>
+                <div class="switch-sub">將所有主線與每日任務標記為已領取</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkClearMissions" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">敵人圖鑑全開 (Enemy Guide)</div>
+                <div class="switch-sub">解鎖全部敵方角色圖鑑</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockEnemyGuide" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">啟用黃金會員證 (Gold Pass)</div>
+                <div class="switch-sub">啟用特權會員</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnlockGoldPass" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">重置拉霸轉盤活動 (Wildcat Slots)</div>
+                <div class="switch-sub">重新享受野貓拉霸機抽罐頭樂趣</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkResetGambling" checked>
+            </label>
+
+            <label class="switch-label">
+              <div class="switch-desc">
+                <div class="switch-title">一鍵解封 / 產生全新詢問碼 (Unban)</div>
+                <div class="switch-sub">更換新帳號 ID 與 Token，解除伺服器封鎖狀態</div>
+              </div>
+              <input type="checkbox" class="checkbox-custom" id="chkUnbanAccount">
+            </label>
+
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label">修改累積遊玩時數 (小時)</label>
+              <div class="input-with-actions">
+                <input type="number" class="form-input" id="inputPlaytimeHours" value="120">
+                <button class="btn btn-secondary btn-sm" onclick="setVal('inputPlaytimeHours', 200)">200h</button>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnApplyFixes" style="margin-top: 12px;">
+              <span>🚀</span> 執行修復與特殊項目
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Modal Dialog -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-card">
+      <h3 class="modal-title" id="modalTitle">提示</h3>
+      <div class="modal-body" id="modalBody">內容</div>
+      <div class="modal-actions" id="modalActions">
+        <button class="btn btn-primary" id="modalBtnOk">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
